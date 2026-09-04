@@ -10,7 +10,7 @@ from collections.abc import Callable
 
 from src.chunking import chunk_text
 from src.extraction.base import Extractor
-from src.graph.merge import merge_graphs
+from src.graph.merge import merge_graphs, resolve_aliases
 from src.schema import KnowledgeGraph
 
 logger = logging.getLogger(__name__)
@@ -47,4 +47,4 @@ async def build_graph(
     if not graphs:
         raise RuntimeError("Extraction failed for every chunk; no graph could be built.")
 
-    return merge_graphs(graphs)
+    return resolve_aliases(merge_graphs(graphs))
