@@ -52,6 +52,14 @@ uv run streamlit run app.py     # or: streamlit run app.py, if installed with pi
 
 Upload a document or paste text, pick a provider and model, and click "Generate graph."
 
+## Testing
+
+```bash
+uv run pytest
+```
+
+Covers the pure and mockable logic: chunking, merge/alias resolution, pipeline orchestration (progress reporting, partial-chunk-failure tolerance), provider config, the extractor, and the renderer's HTML output. Docling ingestion isn't covered yet since it needs a bundled PDF fixture and a much slower test run; that's a reasonable next addition, not an oversight.
+
 ## Tech stack
 
 Streamlit, OpenAI-compatible structured extraction (OpenAI, Groq, Ollama), Pydantic, Docling, D3.js, LangChain text splitters.
