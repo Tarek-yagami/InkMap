@@ -26,11 +26,20 @@ The pipeline depends on the `Extractor` protocol in `extraction/base.py`, not on
 
 ## Setup
 
+With [uv](https://docs.astral.sh/uv/) (recommended, much faster):
+
+```bash
+uv sync
+copy .env.example .env      # then fill in the key(s) for whichever provider(s) you'll use
+```
+
+Without uv, plain pip works too, reading the same `pyproject.toml`:
+
 ```bash
 python -m venv .venv
 .venv\Scripts\activate      # Windows
-pip install -r requirements.txt
-copy .env.example .env      # then fill in the key(s) for whichever provider(s) you'll use
+pip install .
+copy .env.example .env
 ```
 
 For Ollama, no API key is needed, just [Ollama](https://ollama.com) running locally with a model pulled (e.g. `ollama pull llama3.1`).
@@ -38,7 +47,7 @@ For Ollama, no API key is needed, just [Ollama](https://ollama.com) running loca
 ## Usage
 
 ```bash
-streamlit run app.py
+uv run streamlit run app.py     # or: streamlit run app.py, if installed with pip
 ```
 
 Upload a document or paste text, pick a provider and model, and click "Generate graph."
