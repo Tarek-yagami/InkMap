@@ -15,7 +15,7 @@ src/
 │   ├── providers.py          # provider presets (OpenAI, Groq, Ollama): base_url, api_key, models
 │   └── factory.py            # builds an Extractor from a chosen provider/model
 ├── graph/
-│   ├── merge.py           # pure, dependency-free graph deduplication/merge logic
+│   ├── merge.py           # exact-match dedup, then lexical alias resolution ("Noam" -> "Noam Shazeer")
 │   └── render.py          # "Ink Bloom" D3 renderer: glowing halos, curved edges, dark/light toggle
 └── pipeline.py             # orchestrates chunking -> extraction -> merging
 app.py                       # Streamlit UI, depends only on the modules above
@@ -59,5 +59,6 @@ Streamlit, OpenAI-compatible structured extraction (OpenAI, Groq, Ollama), Pydan
 ## Roadmap
 
 - **Cross-paper knowledge base**: persist extracted graphs across sessions instead of rebuilding one per upload, so entities accumulate into a growing knowledge base rather than a single-paper snapshot.
-- **Embedding-based entity resolution**: replace exact lowercase-string matching with similarity matching, so the same entity referenced differently across papers (e.g. "BERT" vs "Bidirectional Encoder Representations from Transformers") collapses into one node.
 - **Literature review support**: once entities resolve across papers, surface things like which papers cite or build on the same concepts, and where consensus or disagreement between papers shows up in the graph.
+
+Within-paper entity resolution (collapsing "Noam" and "Noam Shazeer" into one node) is already handled by `resolve_aliases` in `merge.py`. General-purpose embedding similarity was tried first and rejected: it scored unrelated ML terms like "encoder"/"decoder" higher than genuine aliases, so no threshold could separate them safely. The lexical heuristic that replaced it (substring, pluralization, acronym-initials matching) is scoped to one paper's already-merged nodes; resolving aliases *across* papers is a harder problem tied to the cross-paper knowledge base above.
