@@ -10,8 +10,10 @@ src/
 ├── chunking.py            # splits text into overlapping chunks, same for every input source
 ├── ingestion.py           # document -> plain text, via Docling (layout-aware, OCR off)
 ├── extraction/
-│   ├── base.py            # Extractor protocol
-│   └── openai_extractor.py # OpenAI structured-output implementation
+│   ├── base.py               # Extractor protocol
+│   ├── openai_compatible.py  # one Extractor implementation for any OpenAI-compatible API
+│   ├── providers.py          # provider presets (OpenAI, Groq, Ollama): base_url, api_key, models
+│   └── factory.py            # builds an Extractor from a chosen provider/model
 ├── graph/
 │   ├── merge.py           # pure, dependency-free graph deduplication/merge logic
 │   └── render.py          # PyVis rendering
@@ -19,7 +21,7 @@ src/
 app.py                       # Streamlit UI, depends only on the modules above
 ```
 
-The pipeline depends on the `Extractor` protocol in `extraction/base.py`, not on OpenAI directly. Swapping in a different model provider means adding one new class, not editing the pipeline. Document parsing goes through Docling rather than a bare PDF text extractor, since research papers are usually multi-column and naive extraction scrambles reading order and mangles tables, which directly hurts extraction quality downstream. OCR is disabled since these are digital-native documents, not scans.
+The pipeline depends on the `Extractor` protocol in `extraction/base.py`, not on any specific provider. OpenAI, Groq, and local Ollama models all speak the same OpenAI-compatible chat completions API, so one `OpenAICompatibleExtractor` class handles all three; `providers.py` just points it at a different `base_url`/`api_key`. Adding another OpenAI-compatible provider (OpenRouter, Together, ...) means adding one entry to `providers.py`, not a new class. Document parsing goes through Docling rather than a bare PDF text extractor, since research papers are usually multi-column and naive extraction scrambles reading order and mangles tables, which directly hurts extraction quality downstream. OCR is disabled since these are digital-native documents, not scans.
 
 ## Setup
 
@@ -27,8 +29,10 @@ The pipeline depends on the `Extractor` protocol in `extraction/base.py`, not on
 python -m venv .venv
 .venv\Scripts\activate      # Windows
 pip install -r requirements.txt
-copy .env.example .env      # then fill in OPENAI_API_KEY
+copy .env.example .env      # then fill in the key(s) for whichever provider(s) you'll use
 ```
+
+For Ollama, no API key is needed, just [Ollama](https://ollama.com) running locally with a model pulled (e.g. `ollama pull llama3.1`).
 
 ## Usage
 
@@ -36,11 +40,11 @@ copy .env.example .env      # then fill in OPENAI_API_KEY
 streamlit run app.py
 ```
 
-Upload a document or paste text, pick a model, and click "Generate graph."
+Upload a document or paste text, pick a provider and model, and click "Generate graph."
 
 ## Tech stack
 
-Streamlit, OpenAI structured outputs, Pydantic, Docling, PyVis, LangChain text splitters.
+Streamlit, OpenAI-compatible structured extraction (OpenAI, Groq, Ollama), Pydantic, Docling, PyVis, LangChain text splitters.
 
 ## Roadmap
 
