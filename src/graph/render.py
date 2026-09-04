@@ -2,7 +2,7 @@
 
 from pyvis.network import Network
 
-from inkmap.schema import KnowledgeGraph
+from src.schema import KnowledgeGraph
 
 _NODE_COLORS = {
     "Technology": "#4cc9f0",

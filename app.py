@@ -6,10 +6,10 @@ import streamlit as st
 import streamlit.components.v1 as components
 from dotenv import load_dotenv
 
-from inkmap.extraction.openai_extractor import OpenAIExtractor
-from inkmap.graph.render import render_html
-from inkmap.ingestion import extract_text
-from inkmap.pipeline import build_graph
+from src.extraction.openai_extractor import OpenAIExtractor
+from src.graph.render import render_html
+from src.ingestion import extract_text
+from src.pipeline import build_graph
 
 load_dotenv()
 

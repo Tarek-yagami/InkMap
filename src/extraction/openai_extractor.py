@@ -2,7 +2,7 @@
 
 from openai import AsyncOpenAI
 
-from inkmap.schema import KnowledgeGraph
+from src.schema import KnowledgeGraph
 
 _PROMPT = """Extract the key entities and relationships from the following excerpt of a research paper.
 Identify technologies, methods, concepts, people, organizations, and datasets as nodes, and describe how they

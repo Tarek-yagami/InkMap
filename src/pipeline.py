@@ -6,10 +6,10 @@ which model backs the extraction.
 
 import asyncio
 
-from inkmap.chunking import chunk_text
-from inkmap.extraction.base import Extractor
-from inkmap.graph.merge import merge_graphs
-from inkmap.schema import KnowledgeGraph
+from src.chunking import chunk_text
+from src.extraction.base import Extractor
+from src.graph.merge import merge_graphs
+from src.schema import KnowledgeGraph
 
 
 async def build_graph(text: str, extractor: Extractor) -> KnowledgeGraph:

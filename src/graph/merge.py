@@ -1,7 +1,7 @@
 """Pure domain logic: merges per-chunk KnowledgeGraphs into one deduplicated graph.
 No I/O, so it's fully unit-testable without a network call or an API key."""
 
-from inkmap.schema import Edge, KnowledgeGraph, Node
+from src.schema import Edge, KnowledgeGraph, Node
 
 
 def merge_graphs(graphs: list[KnowledgeGraph]) -> KnowledgeGraph:

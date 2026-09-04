@@ -5,7 +5,7 @@ Turns a research paper into an interactive map of its entities and relationships
 ## Architecture
 
 ```
-inkmap/
+src/
 ├── schema.py              # domain model: Node, Edge, KnowledgeGraph
 ├── chunking.py            # splits text into overlapping chunks, same for every input source
 ├── ingestion.py           # document -> plain text, via Docling (layout-aware, OCR off)

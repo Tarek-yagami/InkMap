@@ -7,7 +7,7 @@ a new class here, not touching pipeline.py.
 
 from typing import Protocol
 
-from inkmap.schema import KnowledgeGraph
+from src.schema import KnowledgeGraph
 
 
 class Extractor(Protocol):
