@@ -29,7 +29,7 @@ PROVIDERS: dict[str, ProviderConfig] = {
     "Groq": ProviderConfig(
         base_url="https://api.groq.com/openai/v1",
         api_key=os.environ.get("GROQ_API_KEY") or "groq-api-key-not-set",
-        models=["llama-3.3-70b-versatile", "llama-3.1-8b-instant"],
+        models=["openai/gpt-oss-120b", "openai/gpt-oss-20b"],
     ),
     "Ollama (local)": ProviderConfig(
         base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
