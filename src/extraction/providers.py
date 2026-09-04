@@ -26,6 +26,7 @@ class ProviderConfig:
     base_url: str | None
     api_key: str | None
     models: list[str]
+    tokens_per_minute: int | None = None  # None means don't throttle client-side
 
 
 def get_providers() -> dict[str, ProviderConfig]:
@@ -39,6 +40,10 @@ def get_providers() -> dict[str, ProviderConfig]:
             base_url="https://api.groq.com/openai/v1",
             api_key=os.environ.get("GROQ_API_KEY") or "groq-api-key-not-set",
             models=["openai/gpt-oss-120b", "openai/gpt-oss-20b"],
+            # Groq's free "on-demand" tier caps these models at 8000 TPM.
+            # Conservative on purpose: better to pace slightly under the real
+            # cap than to keep tripping it.
+            tokens_per_minute=7000,
         ),
         "Ollama (local)": ProviderConfig(
             base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1"),

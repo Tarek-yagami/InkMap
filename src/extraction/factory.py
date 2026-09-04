@@ -8,4 +8,9 @@ from src.extraction.providers import get_providers
 
 def create_extractor(provider: str, model: str) -> Extractor:
     config = get_providers()[provider]
-    return OpenAICompatibleExtractor(model=model, base_url=config.base_url, api_key=config.api_key)
+    return OpenAICompatibleExtractor(
+        model=model,
+        base_url=config.base_url,
+        api_key=config.api_key,
+        tokens_per_minute=config.tokens_per_minute,
+    )

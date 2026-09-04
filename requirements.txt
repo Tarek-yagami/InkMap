@@ -5,3 +5,4 @@ pyvis>=0.3.2
 langchain-text-splitters>=0.2
 docling>=2.0
 python-dotenv>=1.0
+aiolimiter>=1.1
