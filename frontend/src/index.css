@@ -1,0 +1,29 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #14151a;
+  --surface: #1c1e24;
+  --text: #eceef2;
+  --text-muted: #9aa0ac;
+  --border: #2c2f38;
+  --accent: #7ea6d6;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+button {
+  font-family: inherit;
+}

@@ -68,7 +68,11 @@ async def stream_job(job_id: str) -> StreamingResponse:
             yield f"event: complete\ndata: {job.result.model_dump_json()}\n\n"
             return
         if job.status == "error":
-            yield f"event: error\ndata: {json.dumps({'message': job.error})}\n\n"
+            # Named "failed", not "error": EventSource reserves "error" for
+            # its own connection-level failures (a plain Event with no
+            # .data), so a same-named server event would be ambiguous to
+            # tell apart on the client.
+            yield f"event: failed\ndata: {json.dumps({'message': job.error})}\n\n"
             return
 
         # No separate "current state" snapshot here: the queue already holds
@@ -89,7 +93,7 @@ async def stream_job(job_id: str) -> StreamingResponse:
                 yield f"event: complete\ndata: {job.result.model_dump_json()}\n\n"
                 return
             elif kind == "error":
-                yield f"event: error\ndata: {json.dumps({'message': job.error})}\n\n"
+                yield f"event: failed\ndata: {json.dumps({'message': job.error})}\n\n"
                 return
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
