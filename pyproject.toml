@@ -12,6 +12,9 @@ dependencies = [
     "docling>=2.0",
     "python-dotenv>=1.0",
     "aiolimiter>=1.1",
+    "fastapi>=0.141.1",
+    "uvicorn[standard]>=0.52.4",
+    "python-multipart>=0.0.32",
 ]
 
 [build-system]
@@ -23,6 +26,7 @@ packages = ["src"]
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28.1",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
 ]
