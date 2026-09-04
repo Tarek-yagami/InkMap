@@ -70,14 +70,21 @@ if generate:
     if not text:
         st.warning("Upload a document or paste some text first.")
     else:
-        with st.spinner("Extracting entities and relationships..."):
-            try:
-                extractor = create_extractor(provider, model)
-                graph = asyncio.run(build_graph(text, extractor))
-            except Exception as exc:
-                st.error(f"Extraction failed: {exc}")
-                st.stop()
-            html = render_html(graph)
+        progress_bar = st.progress(0.0, text="Extracting entities and relationships...")
+
+        def report_progress(done: int, total: int) -> None:
+            progress_bar.progress(done / total, text=f"Extracting entities and relationships... ({done}/{total} chunks)")
+
+        try:
+            extractor = create_extractor(provider, model)
+            graph = asyncio.run(build_graph(text, extractor, on_progress=report_progress))
+        except Exception as exc:
+            progress_bar.empty()
+            st.error(f"Extraction failed: {exc}")
+            st.stop()
+
+        progress_bar.empty()
+        html = render_html(graph)
 
         st.session_state["graph_html"] = html
         st.session_state["node_count"] = len(graph.nodes)
