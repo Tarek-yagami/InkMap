@@ -1,6 +1,6 @@
 # InkMap
 
-Turns a research paper into an interactive map of its entities and relationships. Upload a PDF (or DOCX/PPTX), or paste text directly, and the app extracts technologies, methods, concepts, people, organizations, and datasets, along with how they relate to each other, then renders the result as a dark-mode, physics-driven network you can pan, zoom, and drag.
+Turns a research paper into an interactive map of its entities and relationships. Upload a PDF (or DOCX/PPTX), or paste text directly, and the app extracts technologies, methods, concepts, people, organizations, and datasets, along with how they relate to each other, then renders the result as "Ink Bloom": a physics-driven network with glowing category halos and hover-revealed labels, in either dark or light.
 
 ## Architecture
 
@@ -16,9 +16,10 @@ src/
 │   └── factory.py            # builds an Extractor from a chosen provider/model
 ├── graph/
 │   ├── merge.py           # pure, dependency-free graph deduplication/merge logic
-│   └── render.py          # PyVis rendering
+│   └── render.py          # "Ink Bloom" D3 renderer: glowing halos, curved edges, dark/light toggle
 └── pipeline.py             # orchestrates chunking -> extraction -> merging
 app.py                       # Streamlit UI, depends only on the modules above
+.streamlit/config.toml       # Streamlit's native theme config (colors), not CSS overrides
 ```
 
 The pipeline depends on the `Extractor` protocol in `extraction/base.py`, not on any specific provider. OpenAI, Groq, and local Ollama models all speak the same OpenAI-compatible chat completions API, so one `OpenAICompatibleExtractor` class handles all three; `providers.py` just points it at a different `base_url`/`api_key`. Adding another OpenAI-compatible provider (OpenRouter, Together, ...) means adding one entry to `providers.py`, not a new class. Document parsing goes through Docling rather than a bare PDF text extractor, since research papers are usually multi-column and naive extraction scrambles reading order and mangles tables, which directly hurts extraction quality downstream. OCR is disabled since these are digital-native documents, not scans.
@@ -44,7 +45,7 @@ Upload a document or paste text, pick a provider and model, and click "Generate 
 
 ## Tech stack
 
-Streamlit, OpenAI-compatible structured extraction (OpenAI, Groq, Ollama), Pydantic, Docling, PyVis, LangChain text splitters.
+Streamlit, OpenAI-compatible structured extraction (OpenAI, Groq, Ollama), Pydantic, Docling, D3.js, LangChain text splitters.
 
 ## Roadmap
 
