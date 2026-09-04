@@ -1,5 +1,7 @@
 # InkMap
 
+[![Tests](https://github.com/Tarek-yagami/InkMap/actions/workflows/tests.yml/badge.svg)](https://github.com/Tarek-yagami/InkMap/actions/workflows/tests.yml)
+
 Turns a research paper into an interactive map of its entities and relationships. Upload a PDF (or DOCX/PPTX), or paste text directly, and the app extracts technologies, methods, concepts, people, organizations, and datasets, along with how they relate to each other, then renders the result as "Ink Bloom": a physics-driven network with glowing category halos and hover-revealed labels, in either dark or light.
 
 ## Architecture
