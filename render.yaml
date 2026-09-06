@@ -1,0 +1,18 @@
+services:
+  - name: inkmap
+    type: web
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      # A public deployment has no route to a visitor's own machine, so
+      # Ollama (which only makes sense against localhost) is hidden here -
+      # see backend/config.py.
+      - key: INKMAP_HIDDEN_PROVIDERS
+        value: "Ollama (local)"
+      # Groq's free tier costs nothing, unlike exposing an OpenAI key to
+      # random visitors, so this is the provider the public deployment
+      # defaults to. Set manually in the Render dashboard, never committed.
+      - key: GROQ_API_KEY
+        sync: false
