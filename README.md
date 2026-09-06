@@ -42,7 +42,8 @@ backend/                     # FastAPI: wraps the same src/ pipeline as an HTTP 
 ├── main.py                # app setup, serves frontend/dist/ once built (same origin, no CORS needed)
 ├── config.py              # deployment env vars (hidden providers), read lazily like providers.py
 ├── routers/                # /api/providers, /api/jobs (start, SSE progress stream, plain status)
-└── jobs/                   # in-memory job store + background runner (single worker only, by design)
+├── jobs/                   # in-memory job store + background runner (single worker only, by design)
+└── rate_limit.py           # per-IP job-creation limit + upload size cap, protects the shared API key
 frontend/                    # React + TypeScript (Vite), the "Ink Bloom" graph ported into a real component
 Dockerfile                    # multi-stage: builds frontend/, then the Python runtime that serves both
 render.yaml                   # Render Blueprint: one Docker web service
@@ -60,6 +61,7 @@ A few decisions worth explaining, each one settled by actually testing it rather
 - **Hugging Face Spaces was the original deployment target, ruled out after real testing.** A live forum report of async background work blocking responses on Spaces raised doubts before Docker-type Spaces turned out to need a paid plan on this account anyway. Switched to Render, then verified live on the actual deployment (not assumed) that progress events arrive with real timing gaps rather than being buffered, and that forcibly dropping the connection mid-extraction and reconnecting resumes cleanly with no lost or duplicated events.
 - **Chunk size was tuned by measurement.** Bigger chunks mean fewer requests and less fixed per-request overhead, but the obvious "just make chunks bigger" move was checked against real output first: on the same paper, chunk sizes of 2000, 3000, and 4000 characters were each run for real, and the largest size traded a real ~20% drop in extracted entities for its speed gain. 3000 was picked as the deliberate middle ground, not the fastest option.
 - **A real SSE bug, caught by watching actual timestamps, not by reading the code.** The progress stream emitted a "current state" snapshot on connect in addition to replaying its backlog queue, so the same progress steps briefly appeared twice, in the wrong order (jumping to 3/8, then back to 1/8, then forward again). Fixed by removing the redundant snapshot once `curl` showed the actual sequence.
+- **Per-IP rate limiting reuses `aiolimiter`, already a dependency for pacing outgoing LLM calls, instead of adding a new library for incoming request limiting.** The public deployment shares one real API key across every visitor, with no protection otherwise against a script hammering it. `aiolimiter`'s own `acquire()` waits for capacity, which is right for pacing outgoing calls but wrong for rejecting an abusive client immediately, so it's paired with the non-blocking `has_capacity()` check instead. Verified live against the running server, not just in tests: 5 rapid job submissions succeed, the 6th gets a 429, and a 16&nbsp;MB upload gets a 413 before it ever reaches Docling.
 
 ## Setup
 
@@ -114,7 +116,7 @@ To deploy for real: connect the GitHub repo on Render (New → Blueprint, it pic
 ## Testing
 
 ```bash
-uv run pytest              # backend: 39 tests
+uv run pytest              # backend: 44 tests
 cd frontend && npm test    # frontend: component + hook tests
 ```
 
