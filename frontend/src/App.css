@@ -1,4 +1,5 @@
 .app {
+  position: relative;
   max-width: 980px;
   margin: 0 auto;
   padding: 28px 32px 48px;
@@ -10,7 +11,7 @@
 }
 
 .eyebrow {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Geist Mono', monospace;
   font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -52,7 +53,6 @@
   color: var(--text-muted);
 }
 
-.field input[type='file'],
 .field input[type='text'],
 .field textarea,
 .field select {
@@ -63,6 +63,46 @@
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 8px 10px;
+}
+
+.dropzone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+  border: 1.5px dashed var(--border);
+  border-radius: 8px;
+  padding: 22px 16px;
+  cursor: pointer;
+  background: var(--bg);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.dropzone:hover,
+.dropzone.dropzone-active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+}
+
+.dropzone input[type='file'] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.dropzone-label {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.dropzone-hint {
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 
 .field-row {
@@ -108,7 +148,7 @@
 }
 
 .progress-label {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Geist Mono', monospace;
   font-size: 0.8rem;
   color: var(--text-muted);
   margin: 0;
@@ -145,7 +185,7 @@
 }
 
 .stat-value {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Geist Mono', monospace;
   font-size: 1.6rem;
   font-weight: 600;
 }
@@ -174,29 +214,28 @@
 }
 
 .graph-canvas text {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Geist Mono', monospace;
 }
 
 .theme-toggle {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 28px;
+  right: 32px;
   z-index: 10;
   display: flex;
-  border: 1px solid rgba(140, 140, 140, 0.35);
+  border: 1px solid var(--border);
   border-radius: 999px;
   padding: 3px;
   gap: 2px;
-  background: rgba(20, 20, 25, 0.35);
-  backdrop-filter: blur(4px);
+  background: var(--surface);
 }
 
 .theme-toggle button {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Geist Mono', monospace;
   font-size: 11px;
   border: none;
   background: transparent;
-  color: #cfd3da;
+  color: var(--text-muted);
   padding: 6px 12px;
   border-radius: 999px;
   cursor: pointer;
@@ -204,7 +243,7 @@
 
 .theme-toggle button[aria-pressed='true'] {
   background: var(--accent);
-  color: #10131c;
+  color: #ffffff;
 }
 
 .theme-toggle button:focus-visible {
