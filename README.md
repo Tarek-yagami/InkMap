@@ -114,10 +114,13 @@ To deploy for real: connect the GitHub repo on Render (New → Blueprint, it pic
 ## Testing
 
 ```bash
-uv run pytest
+uv run pytest              # backend: 39 tests
+cd frontend && npm test    # frontend: component + hook tests
 ```
 
-Covers the pure and mockable logic: chunking, merge/alias resolution, pipeline orchestration (progress reporting, partial-chunk-failure tolerance), provider config, the extractor, and the renderer's HTML output. Docling ingestion isn't covered yet since it needs a bundled PDF fixture and a much slower test run; that's a reasonable next addition, not an oversight.
+Backend tests cover the pure and mockable logic: chunking, merge/alias resolution, pipeline orchestration (progress reporting, partial-chunk-failure tolerance), provider config, the extractor, and the renderer's HTML output. Docling ingestion isn't covered yet since it needs a bundled PDF fixture and a much slower test run; that's a reasonable next addition, not an oversight.
+
+Frontend tests cover `UploadForm` (provider/model defaults, the Ollama free-text model field, validation, and the actual `FormData` sent to the backend) and `useJobProgress` (state transitions on progress/complete/failed SSE events, and that changing or clearing the job id closes the previous subscription). Both test suites run in CI as separate parallel jobs.
 
 ## Tech stack
 
