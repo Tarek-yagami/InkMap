@@ -129,8 +129,16 @@
   cursor: default;
 }
 
-.reset-button {
+.post-graph-actions {
+  display: flex;
+  gap: 12px;
   margin-top: 16px;
+}
+
+.reset-button-secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 .error-panel {

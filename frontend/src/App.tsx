@@ -29,6 +29,17 @@ function App() {
     setView({ status: 'form' })
   }
 
+  function downloadGraphJson() {
+    if (view.status !== 'progress' || !progress.result) return
+    const blob = new Blob([JSON.stringify(progress.result, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'paper_graph.json'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="app">
       <div className="theme-toggle" role="group" aria-label="Theme">
@@ -81,9 +92,14 @@ function App() {
             <StatCard label="Relationships" value={progress.result.edges.length} />
           </div>
           <GraphView graph={progress.result} theme={theme} />
-          <button className="reset-button" onClick={reset}>
-            Start over
-          </button>
+          <div className="post-graph-actions">
+            <button className="reset-button" onClick={downloadGraphJson}>
+              Download JSON
+            </button>
+            <button className="reset-button reset-button-secondary" onClick={reset}>
+              Start over
+            </button>
+          </div>
         </>
       )}
     </div>
