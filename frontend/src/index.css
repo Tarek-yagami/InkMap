@@ -3,6 +3,15 @@
 }
 
 :root {
+  --bg: #f5f3ee;
+  --surface: #ffffff;
+  --text: #1b1c20;
+  --text-muted: #5b5f6a;
+  --border: #e2ddd0;
+  --accent: #3d5a80;
+}
+
+:root[data-theme='dark'] {
   --bg: #14151a;
   --surface: #1c1e24;
   --text: #eceef2;
@@ -21,7 +30,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-family: 'Geist', system-ui, sans-serif;
 }
 
 button {

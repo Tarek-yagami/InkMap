@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 import { GraphView } from './components/GraphView'
 import { ProgressView } from './components/ProgressView'
@@ -11,9 +11,19 @@ type ViewState =
   | { status: 'progress'; jobId: string }
   | { status: 'error'; message: string }
 
+type Theme = 'light' | 'dark'
+
 function App() {
   const [view, setView] = useState<ViewState>({ status: 'form' })
+  const [theme, setTheme] = useState<Theme>('light')
   const progress = useJobProgress(view.status === 'progress' ? view.jobId : null)
+
+  // On the document root, not the inner .app div: body's own background
+  // (visible in the margins outside the centered content) needs to follow
+  // the theme too, not just the content area.
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+  }, [theme])
 
   function reset() {
     setView({ status: 'form' })
@@ -21,6 +31,15 @@ function App() {
 
   return (
     <div className="app">
+      <div className="theme-toggle" role="group" aria-label="Theme">
+        <button aria-pressed={theme === 'light'} onClick={() => setTheme('light')}>
+          &#9728; Light
+        </button>
+        <button aria-pressed={theme === 'dark'} onClick={() => setTheme('dark')}>
+          &#9789; Dark
+        </button>
+      </div>
+
       <header className="app-header">
         <p className="eyebrow">InkMap</p>
         <h1>Paper to knowledge graph</h1>
@@ -61,7 +80,7 @@ function App() {
             <StatCard label="Entities" value={progress.result.nodes.length} />
             <StatCard label="Relationships" value={progress.result.edges.length} />
           </div>
-          <GraphView graph={progress.result} />
+          <GraphView graph={progress.result} theme={theme} />
           <button className="reset-button" onClick={reset}>
             Start over
           </button>

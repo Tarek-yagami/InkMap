@@ -1,5 +1,5 @@
 import * as d3 from 'd3'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import type { KnowledgeGraph } from '../types'
 
 type Theme = 'dark' | 'light'
@@ -62,12 +62,12 @@ interface SimLink extends d3.SimulationLinkDatum<SimNode> {
 
 interface Props {
   graph: KnowledgeGraph
+  theme: Theme
 }
 
-export function GraphView({ graph }: Props) {
+export function GraphView({ graph, theme }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [theme, setTheme] = useState<Theme>('dark')
-  const paletteRef = useRef<Palette>(DARK)
+  const paletteRef = useRef<Palette>(theme === 'light' ? LIGHT : DARK)
 
   // Repaint on theme change without rebuilding the simulation - mirrors the
   // original render.py's paint()/setTheme() split.
@@ -223,14 +223,6 @@ export function GraphView({ graph }: Props) {
 
   return (
     <div className="panel graph-panel">
-      <div className="theme-toggle" role="group" aria-label="Theme">
-        <button aria-pressed={theme === 'dark'} onClick={() => setTheme('dark')}>
-          &#9789; Dark
-        </button>
-        <button aria-pressed={theme === 'light'} onClick={() => setTheme('light')}>
-          &#9728; Light
-        </button>
-      </div>
       <div className="graph-canvas" ref={containerRef} />
     </div>
   )

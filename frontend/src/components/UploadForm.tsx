@@ -14,6 +14,7 @@ export function UploadForm({ onStarted, onError }: Props) {
   const [file, setFile] = useState<File | null>(null)
   const [text, setText] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [dragActive, setDragActive] = useState(false)
 
   useEffect(() => {
     fetchProviders()
@@ -34,6 +35,13 @@ export function UploadForm({ onStarted, onError }: Props) {
     setProvider(name)
     const found = providers.find((p) => p.name === name)
     if (found) setModel(found.models[0])
+  }
+
+  function handleDrop(event: React.DragEvent<HTMLLabelElement>) {
+    event.preventDefault()
+    setDragActive(false)
+    const dropped = event.dataTransfer.files?.[0]
+    if (dropped) setFile(dropped)
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -62,14 +70,26 @@ export function UploadForm({ onStarted, onError }: Props) {
 
   return (
     <form className="panel upload-form" onSubmit={handleSubmit}>
-      <label className="field">
+      <div className="field">
         <span>Upload a document</span>
-        <input
-          type="file"
-          accept=".pdf,.docx,.pptx"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-        />
-      </label>
+        <label
+          className={`dropzone${dragActive ? ' dropzone-active' : ''}`}
+          onDragOver={(e) => {
+            e.preventDefault()
+            setDragActive(true)
+          }}
+          onDragLeave={() => setDragActive(false)}
+          onDrop={handleDrop}
+        >
+          <input
+            type="file"
+            accept=".pdf,.docx,.pptx"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          />
+          <span className="dropzone-label">{file ? file.name : 'Click to upload or drag and drop'}</span>
+          <span className="dropzone-hint">PDF, DOCX, or PPTX</span>
+        </label>
+      </div>
 
       <label className="field">
         <span>...or paste text directly</span>
