@@ -7,9 +7,10 @@ is pending")."""
 import asyncio
 import json
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
 
+from backend import rate_limit
 from backend.jobs.runner import run_job
 from backend.jobs.store import store
 from backend.schemas import JobStatusResponse
@@ -18,18 +19,30 @@ router = APIRouter()
 
 _background_tasks: set[asyncio.Task] = set()
 
+# A generous cap for a research paper PDF, restrictive enough to stop
+# someone uploading something absurd and burning CPU on Docling parsing
+# for no reason.
+_MAX_UPLOAD_BYTES = 15 * 1024 * 1024
+
 
 @router.post("/jobs", status_code=202)
 async def start_job(
+    request: Request,
     file: UploadFile | None = File(None),
     text: str | None = Form(None),
     provider: str = Form(...),
     model: str = Form(...),
 ) -> dict[str, str]:
+    client_ip = request.client.host if request.client else "unknown"
+    if not await rate_limit.check_and_record(client_ip):
+        raise HTTPException(429, "Too many requests. Please wait a few minutes and try again.")
+
     if file is None and not (text or "").strip():
         raise HTTPException(400, "Upload a document or paste some text first.")
 
     file_bytes = await file.read() if file is not None else None
+    if file_bytes is not None and len(file_bytes) > _MAX_UPLOAD_BYTES:
+        raise HTTPException(413, f"File too large (max {_MAX_UPLOAD_BYTES // (1024 * 1024)} MB).")
     filename = file.filename if file is not None else None
 
     job = store.create()
