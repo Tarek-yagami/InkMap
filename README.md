@@ -4,7 +4,7 @@
 
 Turns a research paper into an interactive map of its entities and relationships. Upload a PDF (or DOCX/PPTX), or paste text directly, and the app extracts technologies, methods, concepts, people, organizations, and datasets, along with how they relate to each other, then renders the result as "Ink Bloom": a physics-driven network with glowing category halos and hover-revealed labels, in either dark or light.
 
-Ships as two independent frontends sharing the same underlying pipeline: a Streamlit app for a quick local demo, and a FastAPI + React app for a full custom build, deployed live at [inkmap.onrender.com](https://inkmap.onrender.com).
+A FastAPI backend wraps the pipeline as an HTTP + SSE API, with a React frontend on top, deployed live at [inkmap.onrender.com](https://inkmap.onrender.com).
 
 ![InkMap demo: uploading a paper, watching live extraction progress, and exploring the resulting graph in both themes](docs/demo.gif)
 
@@ -18,8 +18,7 @@ flowchart LR
     D --> E[merge_graphs]
     E --> F[resolve_aliases]
     F --> G{{KnowledgeGraph}}
-    G --> H["Streamlit UI<br/>(render.py)"]
-    G --> I["FastAPI + React UI<br/>(GraphView.tsx)"]
+    G --> H["FastAPI + React UI<br/>(GraphView.tsx)"]
 ```
 
 ```
@@ -33,12 +32,9 @@ src/
 │   ├── providers.py          # provider presets (OpenAI, Groq, Ollama): base_url, api_key, models
 │   └── factory.py            # builds an Extractor from a chosen provider/model
 ├── graph/
-│   ├── merge.py           # exact-match dedup, then lexical alias resolution ("Noam" -> "Noam Shazeer")
-│   └── render.py          # "Ink Bloom" D3 renderer: glowing halos, curved edges, dark/light toggle
+│   └── merge.py           # exact-match dedup, then lexical alias resolution ("Noam" -> "Noam Shazeer")
 └── pipeline.py             # orchestrates chunking -> extraction -> merging
-app.py                       # Streamlit UI, depends only on the modules above
-.streamlit/config.toml       # Streamlit's native theme config (colors), not CSS overrides
-backend/                     # FastAPI: wraps the same src/ pipeline as an HTTP + SSE API
+backend/                     # FastAPI: wraps the src/ pipeline as an HTTP + SSE API
 ├── main.py                # app setup, serves frontend/dist/ once built (same origin, no CORS needed)
 ├── config.py              # deployment env vars (hidden providers), read lazily like providers.py
 ├── routers/                # /api/providers, /api/jobs (start, SSE progress stream, plain status)
@@ -86,16 +82,6 @@ For Ollama, no API key is needed, just [Ollama](https://ollama.com) running loca
 ## Usage
 
 ```bash
-uv run streamlit run app.py     # or: streamlit run app.py, if installed with pip
-```
-
-Upload a document or paste text, pick a provider and model, and click "Generate graph."
-
-## Custom frontend (FastAPI + React)
-
-A second, full-stack version of the same product, alongside the Streamlit app rather than replacing it:
-
-```bash
 cd frontend && npm install && npm run build && cd ..
 uv run uvicorn backend.main:app --reload
 ```
@@ -116,17 +102,17 @@ To deploy for real: connect the GitHub repo on Render (New → Blueprint, it pic
 ## Testing
 
 ```bash
-uv run pytest              # backend: 44 tests
+uv run pytest              # backend: 42 tests
 cd frontend && npm test    # frontend: component + hook tests
 ```
 
-Backend tests cover the pure and mockable logic: chunking, merge/alias resolution, pipeline orchestration (progress reporting, partial-chunk-failure tolerance), provider config, the extractor, and the renderer's HTML output. Docling ingestion isn't covered yet since it needs a bundled PDF fixture and a much slower test run; that's a reasonable next addition, not an oversight.
+Backend tests cover the pure and mockable logic: chunking, merge/alias resolution, pipeline orchestration (progress reporting, partial-chunk-failure tolerance), provider config, and the extractor. Docling ingestion isn't covered yet since it needs a bundled PDF fixture and a much slower test run; that's a reasonable next addition, not an oversight.
 
 Frontend tests cover `UploadForm` (provider/model defaults, the Ollama free-text model field, validation, and the actual `FormData` sent to the backend) and `useJobProgress` (state transitions on progress/complete/failed SSE events, and that changing or clearing the job id closes the previous subscription). Both test suites run in CI as separate parallel jobs.
 
 ## Tech stack
 
-Streamlit, FastAPI, React, TypeScript, OpenAI-compatible structured extraction (OpenAI, Groq, Ollama), Pydantic, Docling, D3.js, LangChain text splitters, Docker, Render.
+FastAPI, React, TypeScript, OpenAI-compatible structured extraction (OpenAI, Groq, Ollama), Pydantic, Docling, D3.js, LangChain text splitters, Docker, Render.
 
 ## Roadmap
 
