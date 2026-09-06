@@ -4,6 +4,8 @@
 
 Turns a research paper into an interactive map of its entities and relationships. Upload a PDF (or DOCX/PPTX), or paste text directly, and the app extracts technologies, methods, concepts, people, organizations, and datasets, along with how they relate to each other, then renders the result as "Ink Bloom": a physics-driven network with glowing category halos and hover-revealed labels, in either dark or light.
 
+Ships as two independent frontends sharing the same underlying pipeline: a Streamlit app for a quick local demo, and a FastAPI + React app for a full custom build, deployable as one Docker container.
+
 ## Architecture
 
 ```
@@ -22,6 +24,14 @@ src/
 └── pipeline.py             # orchestrates chunking -> extraction -> merging
 app.py                       # Streamlit UI, depends only on the modules above
 .streamlit/config.toml       # Streamlit's native theme config (colors), not CSS overrides
+backend/                     # FastAPI: wraps the same src/ pipeline as an HTTP + SSE API
+├── main.py                # app setup, serves frontend/dist/ once built (same origin, no CORS needed)
+├── config.py              # deployment env vars (hidden providers), read lazily like providers.py
+├── routers/                # /api/providers, /api/jobs (start, SSE progress stream, plain status)
+└── jobs/                   # in-memory job store + background runner (single worker only, by design)
+frontend/                    # React + TypeScript (Vite), the "Ink Bloom" graph ported into a real component
+Dockerfile                    # multi-stage: builds frontend/, then the Python runtime that serves both
+render.yaml                   # Render Blueprint: one Docker web service
 ```
 
 The pipeline depends on the `Extractor` protocol in `extraction/base.py`, not on any specific provider. OpenAI, Groq, and local Ollama models all speak the same OpenAI-compatible chat completions API, so one `OpenAICompatibleExtractor` class handles all three; `providers.py` just points it at a different `base_url`/`api_key`. Adding another OpenAI-compatible provider (OpenRouter, Together, ...) means adding one entry to `providers.py`, not a new class. Document parsing goes through Docling rather than a bare PDF text extractor, since research papers are usually multi-column and naive extraction scrambles reading order and mangles tables, which directly hurts extraction quality downstream. OCR is disabled since these are digital-native documents, not scans.
@@ -54,6 +64,28 @@ uv run streamlit run app.py     # or: streamlit run app.py, if installed with pi
 
 Upload a document or paste text, pick a provider and model, and click "Generate graph."
 
+## Custom frontend (FastAPI + React)
+
+A second, full-stack version of the same product, alongside the Streamlit app rather than replacing it:
+
+```bash
+cd frontend && npm install && npm run build && cd ..
+uv run uvicorn backend.main:app --reload
+```
+
+Open `http://localhost:8000`. The backend serves both the API and the built frontend from the same origin, so there's no separate frontend dev server needed once it's built once; for active frontend development, `npm run dev` inside `frontend/` proxies `/api` to the backend automatically (see `frontend/vite.config.ts`).
+
+### Deployment
+
+Deployed as one Docker container to [Render](https://render.com) (free tier, no card required):
+
+```bash
+docker build -t inkmap .
+docker run -p 8000:8000 --env-file .env inkmap
+```
+
+To deploy for real: connect the GitHub repo on Render (New → Blueprint, it picks up `render.yaml` automatically), then set `GROQ_API_KEY` as a secret in Render's dashboard. `INKMAP_HIDDEN_PROVIDERS=Ollama (local)` is already set in `render.yaml`, since a public deployment has no route to a visitor's own machine.
+
 ## Testing
 
 ```bash
@@ -64,7 +96,7 @@ Covers the pure and mockable logic: chunking, merge/alias resolution, pipeline o
 
 ## Tech stack
 
-Streamlit, OpenAI-compatible structured extraction (OpenAI, Groq, Ollama), Pydantic, Docling, D3.js, LangChain text splitters.
+Streamlit, FastAPI, React, TypeScript, OpenAI-compatible structured extraction (OpenAI, Groq, Ollama), Pydantic, Docling, D3.js, LangChain text splitters, Docker, Render.
 
 ## Roadmap
 
