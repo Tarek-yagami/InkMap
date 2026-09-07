@@ -1,15 +1,31 @@
 import importlib
 
 from src.extraction import providers as providers_module
+from src.extraction.anthropic_extractor import AnthropicExtractor
 from src.extraction.factory import create_extractor
+from src.extraction.openai_compatible import OpenAICompatibleExtractor
 from src.extraction.providers import get_providers
 
 
 def test_every_provider_has_a_model_list():
     all_providers = get_providers()
-    assert set(all_providers) == {"OpenAI", "Groq", "Ollama (local)"}
+    assert set(all_providers) == {"OpenAI", "Groq", "Ollama (local)", "Claude"}
     for config in all_providers.values():
         assert len(config.models) > 0
+
+
+def test_create_extractor_dispatches_by_kind_not_by_name():
+    # Claude has a genuinely different API shape (Anthropic's Messages API,
+    # not OpenAI-compatible), so it must get its own Extractor class - this
+    # is what actually proves the Extractor protocol isn't just an OpenAI
+    # wrapper, not merely a docstring claim.
+    assert isinstance(create_extractor("Claude", "claude-sonnet-5"), AnthropicExtractor)
+    assert isinstance(create_extractor("OpenAI", "gpt-4o-mini"), OpenAICompatibleExtractor)
+
+
+def test_claude_constructs_without_any_env_vars_set(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    create_extractor("Claude", "claude-sonnet-5")
 
 
 def test_env_vars_resolve_at_call_time_not_import_time(monkeypatch):

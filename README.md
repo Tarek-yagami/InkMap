@@ -14,7 +14,7 @@ A FastAPI backend wraps the pipeline as an HTTP + SSE API, with a React frontend
 flowchart LR
     A["PDF / DOCX / PPTX<br/>or pasted text"] --> B["Docling ingestion<br/>(layout-aware, OCR off)"]
     B --> C[chunk_text]
-    C --> D["Extractor protocol<br/>OpenAI / Groq / Ollama"]
+    C --> D["Extractor protocol<br/>OpenAI / Groq / Ollama / Claude"]
     D --> E[merge_graphs]
     E --> F[resolve_aliases]
     F --> G{{KnowledgeGraph}}
@@ -28,9 +28,11 @@ src/
 ├── ingestion.py           # document -> plain text, via Docling (layout-aware, OCR off)
 ├── extraction/
 │   ├── base.py               # Extractor protocol
+│   ├── prompt.py             # extraction task description, shared by every Extractor
 │   ├── openai_compatible.py  # one Extractor implementation for any OpenAI-compatible API
-│   ├── providers.py          # provider presets (OpenAI, Groq, Ollama): base_url, api_key, models
-│   └── factory.py            # builds an Extractor from a chosen provider/model
+│   ├── anthropic_extractor.py # Extractor for Claude's Messages API (a genuinely different shape)
+│   ├── providers.py          # provider presets (OpenAI, Groq, Ollama, Claude), keyed by kind
+│   └── factory.py            # builds the right Extractor for a chosen provider/model
 ├── graph/
 │   └── merge.py           # exact-match dedup, then lexical alias resolution ("Noam" -> "Noam Shazeer")
 └── pipeline.py             # orchestrates chunking -> extraction -> merging
@@ -45,12 +47,13 @@ Dockerfile                    # multi-stage: builds frontend/, then the Python r
 render.yaml                   # Render Blueprint: one Docker web service
 ```
 
-The pipeline depends on the `Extractor` protocol in `extraction/base.py`, not on any specific provider. OpenAI, Groq, and local Ollama models all speak the same OpenAI-compatible chat completions API, so one `OpenAICompatibleExtractor` class handles all three; `providers.py` just points it at a different `base_url`/`api_key`. Adding another OpenAI-compatible provider (OpenRouter, Together, ...) means adding one entry to `providers.py`, not a new class. Document parsing goes through Docling rather than a bare PDF text extractor, since research papers are usually multi-column and naive extraction scrambles reading order and mangles tables, which directly hurts extraction quality downstream. OCR is disabled since these are digital-native documents, not scans.
+The pipeline depends on the `Extractor` protocol in `extraction/base.py`, not on any specific provider. OpenAI, Groq, and local Ollama models all speak the same OpenAI-compatible chat completions API, so one `OpenAICompatibleExtractor` class handles all three; `providers.py` just points it at a different `base_url`/`api_key`. Adding another OpenAI-compatible provider (OpenRouter, Together, ...) means adding one entry to `providers.py`, not a new class. Claude's Messages API is a genuinely different shape (its own request format and structured-output mechanism via forced tool use rather than `response_format`), so it gets its own `AnthropicExtractor` class; `providers.py` marks each entry with a `kind`, and `factory.py` dispatches on that, so `pipeline.py` and both frontends never know or care which concrete class they're talking to. Document parsing goes through Docling rather than a bare PDF text extractor, since research papers are usually multi-column and naive extraction scrambles reading order and mangles tables, which directly hurts extraction quality downstream. OCR is disabled since these are digital-native documents, not scans.
 
 ## Engineering notes
 
 A few decisions worth explaining, each one settled by actually testing it rather than assuming:
 
+- **A second, non-OpenAI-compatible provider was added to prove the `Extractor` protocol is a real seam, not just an OpenAI wrapper.** Claude's Messages API has its own request shape and its own structured-output mechanism (forced tool use), unlike OpenAI/Groq/Ollama which all happen to share one wire format. `AnthropicExtractor` implements the same protocol as a genuinely different class, with no changes to `pipeline.py` or either frontend. Verified with realistic mocks matching the actual Anthropic SDK's response shapes (including a case where Claude prepends a plain-text block before the forced tool call) rather than a live run, since no Anthropic budget is set up for this project.
 - **Docling over a plain PDF text extractor.** Verified on a real multi-column paper, not just claimed: reading order came out correct across the two-column layout, and a results table survived extraction as an actual markdown table with the right numbers in the right columns.
 - **Embedding similarity was tried for entity resolution, then rejected.** The plan was to collapse aliases like "Noam" and "Noam Shazeer" using sentence-embedding similarity. Real scores told a different story: the genuine alias pair scored 0.64, while unrelated pairs like "encoder"/"decoder" (0.70) and "self-attention"/"multi-head attention" (0.67) scored higher. No threshold could separate real aliases from merely-related concepts, so a narrow lexical heuristic (substring, pluralization, acronym-initials matching) replaced it, verified against both the real cases and adversarial non-matches like "AI" against "domain."
 - **GPT-OSS's hidden reasoning cost was found by testing a single request, not reading docs.** A one-word test request burned 89 of its 107 completion tokens on hidden reasoning the model never shows. Setting `reasoning_effort="low"` cut that to 14 of 28, roughly an 84% drop, with no visible loss in extraction quality.
@@ -102,17 +105,17 @@ To deploy for real: connect the GitHub repo on Render (New → Blueprint, it pic
 ## Testing
 
 ```bash
-uv run pytest              # backend: 42 tests
+uv run pytest              # backend: 48 tests
 cd frontend && npm test    # frontend: component + hook tests
 ```
 
-Backend tests cover the pure and mockable logic: chunking, merge/alias resolution, pipeline orchestration (progress reporting, partial-chunk-failure tolerance), provider config, and the extractor. Docling ingestion isn't covered yet since it needs a bundled PDF fixture and a much slower test run; that's a reasonable next addition, not an oversight.
+Backend tests cover the pure and mockable logic: chunking, merge/alias resolution, pipeline orchestration (progress reporting, partial-chunk-failure tolerance), provider config, and both extractors. Docling ingestion isn't covered yet since it needs a bundled PDF fixture and a much slower test run; that's a reasonable next addition, not an oversight.
 
 Frontend tests cover `UploadForm` (provider/model defaults, the Ollama free-text model field, validation, and the actual `FormData` sent to the backend) and `useJobProgress` (state transitions on progress/complete/failed SSE events, and that changing or clearing the job id closes the previous subscription). Both test suites run in CI as separate parallel jobs.
 
 ## Tech stack
 
-FastAPI, React, TypeScript, OpenAI-compatible structured extraction (OpenAI, Groq, Ollama), Pydantic, Docling, D3.js, LangChain text splitters, Docker, Render.
+FastAPI, React, TypeScript, OpenAI-compatible structured extraction (OpenAI, Groq, Ollama) and Anthropic's Claude, Pydantic, Docling, D3.js, LangChain text splitters, Docker, Render.
 
 ## Roadmap
 

@@ -3,8 +3,11 @@
 Uses plain JSON-object responses validated against the KnowledgeGraph schema
 client-side, rather than OpenAI's `.parse()` structured-output helper, since
 strict JSON-schema mode isn't reliably supported across every OpenAI-compatible
-provider. One class covers all of them; adding a new provider is a config entry
-in providers.py, not a new extractor class.
+provider. One class covers all of them; adding a new OpenAI-compatible provider
+is a config entry in providers.py, not a new extractor class. A genuinely
+different API shape (Anthropic's Claude) gets its own class instead -
+see anthropic_extractor.py - since pipeline.py depends only on the Extractor
+protocol, not on this module.
 
 Concurrent chunk extraction easily exceeds a provider's tokens-per-minute cap
 (e.g. Groq's free tier caps some models at 8000 TPM). aiolimiter paces requests
@@ -15,11 +18,12 @@ stays as a second line of defense for whatever a rough token estimate misses.
 from aiolimiter import AsyncLimiter
 from openai import AsyncOpenAI
 
+from src.extraction.prompt import EXTRACTION_TASK
 from src.schema import KnowledgeGraph
 
-_PROMPT = """Extract the key entities and relationships from the following excerpt of a research paper.
-Identify technologies, methods, concepts, people, organizations, and datasets as nodes, and describe how they
-relate to each other as edges. Only include entities that are explicitly discussed in this excerpt.
+_PROMPT = (
+    EXTRACTION_TASK
+    + """
 
 Respond with a single JSON object of exactly this shape, and nothing else:
 {{"nodes": [{{"name": "...", "type": "Technology|Method|Concept|Person|Organization|Dataset"}}],
@@ -28,6 +32,7 @@ Respond with a single JSON object of exactly this shape, and nothing else:
 Excerpt:
 {chunk}
 """
+)
 
 # Rough estimate (~4 chars/token) plus a flat buffer covering the prompt
 # template and expected completion size. Doesn't need to be exact, just close

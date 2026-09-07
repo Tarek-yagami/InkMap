@@ -46,7 +46,7 @@ def test_providers_never_exposes_api_key():
     assert resp.status_code == 200
     assert "api_key" not in resp.text
     names = {p["name"] for p in resp.json()}
-    assert names == {"OpenAI", "Groq", "Ollama (local)"}
+    assert names == {"OpenAI", "Groq", "Ollama (local)", "Claude"}
 
 
 def test_hidden_providers_env_var_filters_the_list(monkeypatch):
