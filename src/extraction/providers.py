@@ -15,9 +15,15 @@ moment this module was first imported, which can be before .env has been
 loaded depending on import order in the caller. Reading lazily makes this
 correct regardless of that order.
 
-Non-OpenAI providers get an explicit non-empty api_key fallback rather than
-letting the client fall back to OPENAI_API_KEY: that fallback is meant for
-OpenAI's own endpoint, and silently reusing it here would mean sending an
+Every provider gets an explicit non-empty api_key fallback rather than a bare
+None, even OpenAI itself: the SDK now raises eagerly at construction time if
+no key is found (env var included), rather than deferring the failure to the
+first real request. A missing/placeholder key should surface as a real,
+actionable API error when a job actually runs, not crash extractor
+construction outright - which would otherwise take down job creation entirely
+for any provider whose key isn't configured, e.g. a public deployment that
+only sets one provider's key. Non-OpenAI providers specifically must not
+fall back to OPENAI_API_KEY, since silently reusing it would mean sending an
 OpenAI credential to a third-party host.
 """
 
@@ -42,7 +48,7 @@ def get_providers() -> dict[str, ProviderConfig]:
         "OpenAI": ProviderConfig(
             kind="openai_compatible",
             base_url=None,
-            api_key=None,  # AsyncOpenAI reads OPENAI_API_KEY itself when api_key is None
+            api_key=os.environ.get("OPENAI_API_KEY") or "openai-api-key-not-set",
             models=["gpt-4o-mini", "gpt-4o"],
         ),
         "Groq": ProviderConfig(

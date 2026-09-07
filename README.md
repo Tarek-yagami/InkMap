@@ -54,6 +54,7 @@ The pipeline depends on the `Extractor` protocol in `extraction/base.py`, not on
 A few decisions worth explaining, each one settled by actually testing it rather than assuming:
 
 - **A second, non-OpenAI-compatible provider was added to prove the `Extractor` protocol is a real seam, not just an OpenAI wrapper.** Claude's Messages API has its own request shape and its own structured-output mechanism (forced tool use), unlike OpenAI/Groq/Ollama which all happen to share one wire format. `AnthropicExtractor` implements the same protocol as a genuinely different class, with no changes to `pipeline.py` or either frontend. Verified with realistic mocks matching the actual Anthropic SDK's response shapes (including a case where Claude prepends a plain-text block before the forced tool call) rather than a live run, since no Anthropic budget is set up for this project.
+- **A real bug caught by CI, not by local testing.** Adding Claude's provider entry led to writing the first test that ever constructed the OpenAI extractor with no `OPENAI_API_KEY` anywhere in the environment. Locally that env var happened to already be set, so it passed; on CI's clean environment it failed, because the OpenAI SDK now raises at construction time when no key is found anywhere, rather than waiting for the first real request. That's not just a test artifact: on the live deployment, where only `GROQ_API_KEY` is configured, selecting "OpenAI" would have crashed job creation outright the same way. Fixed by giving every provider, OpenAI included, the same explicit non-empty placeholder fallback already used for Groq and Ollama, so a missing key surfaces as a normal failed API request instead of a crash.
 - **Docling over a plain PDF text extractor.** Verified on a real multi-column paper, not just claimed: reading order came out correct across the two-column layout, and a results table survived extraction as an actual markdown table with the right numbers in the right columns.
 - **Embedding similarity was tried for entity resolution, then rejected.** The plan was to collapse aliases like "Noam" and "Noam Shazeer" using sentence-embedding similarity. Real scores told a different story: the genuine alias pair scored 0.64, while unrelated pairs like "encoder"/"decoder" (0.70) and "self-attention"/"multi-head attention" (0.67) scored higher. No threshold could separate real aliases from merely-related concepts, so a narrow lexical heuristic (substring, pluralization, acronym-initials matching) replaced it, verified against both the real cases and adversarial non-matches like "AI" against "domain."
 - **GPT-OSS's hidden reasoning cost was found by testing a single request, not reading docs.** A one-word test request burned 89 of its 107 completion tokens on hidden reasoning the model never shows. Setting `reasoning_effort="low"` cut that to 14 of 28, roughly an 84% drop, with no visible loss in extraction quality.
@@ -105,7 +106,7 @@ To deploy for real: connect the GitHub repo on Render (New → Blueprint, it pic
 ## Testing
 
 ```bash
-uv run pytest              # backend: 48 tests
+uv run pytest              # backend: 47 tests
 cd frontend && npm test    # frontend: component + hook tests
 ```
 
