@@ -5,7 +5,7 @@ from pydantic import BaseModel
 # The extraction prompt asks for one of a fixed set of categories, but an LLM
 # occasionally picks a close synonym instead (e.g. "Tool" for "Technology").
 # Rejecting the whole node over that would throw away otherwise-valid data;
-# render.py already falls back to a default color for any type it doesn't
+# GraphView.tsx already falls back to a default color for any type it doesn't
 # recognize, so a plain string is the actual constraint here, not an enum.
 NodeType = str
 
